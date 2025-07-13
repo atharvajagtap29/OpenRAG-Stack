@@ -1,0 +1,4 @@
+boto3
+PyPDF2
+python-docx
+requests

@@ -1,0 +1,31 @@
+{
+  "name": "open-rag-backend",
+  "version": "1.0.0",
+  "description": "Open-source RAG pipeline implementation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "npm run generate-swagger && nodemon index.js",
+    "generate-swagger": "node swagger.js"
+  },
+  "author": "Atharva",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.716.0",
+    "@aws-sdk/client-s3": "^3.693.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.12.0",
+    "nanoid": "^5.1.5",
+    "sequelize": "^6.37.5",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1",
+    "weaviate-ts-client": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

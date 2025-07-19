@@ -1,0 +1,66 @@
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Build Output ---
+dist/
+dist-ssr/
+build/
+*.local
+
+# --- Vite ---
+.vite/
+vite.svg
+
+# --- Environment Variables ---
+.env
+.env.*.local
+.env.local
+
+# --- Logs ---
+logs/
+*.log
+
+# --- OS & Editor ---
+.DS_Store
+Thumbs.db
+
+# --- IDE ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- React/Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.next/
+frontend/out/
+frontend/.DS_Store
+frontend/coverage/
+
+# --- ShadCN / Tailwind Cache (optional) ---
+.tailwind/
+.tailwind-cache/
+
+# --- Testing / Linting ---
+coverage/
+*.lcov
+eslint-report.json
+stylelint-report.json
+
+# --- Misc ---
+*.log
+*.lock
+*.tmp
+*.bak
+*.pid

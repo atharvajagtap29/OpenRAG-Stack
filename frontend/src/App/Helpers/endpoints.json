@@ -1,0 +1,12 @@
+{
+  "ProjectName": "OpenSourceRAG-Stack",
+  "ProjectVersion": "1.0.0",
+  "BACKEND_API_ENDPOINTS": {
+    "CONTEXTS": {
+      "CREATE": "/api/v1/context",
+      "READ": "/api/v1/contexts",
+      "DELETE": "/api/v1/context/"
+    },
+    "AGENT": {}
+  }
+}

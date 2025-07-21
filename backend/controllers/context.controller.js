@@ -10,274 +10,197 @@ import { s3Client } from "../utils/AWS/clients.js";
 import { Context } from "../models/context.model.js";
 import { weaviateClient } from "../utils/GenAI/weaviateClient.js";
 
-// ✅ Upload Context Document
-// POST /api/v1/context
-// export const uploadContextDocument = asyncHandler(async (req, res) => {
-//   const { context_name, context_type } = req.body;
-//   const file = req.file;
-
-//   if (!context_name || !context_type || !file) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "context_name, context_type, and context_file are required",
-//     });
-//   }
-
-//   const allowedExtensions = [".pdf", ".docx", ".txt"];
-//   const extension = path.extname(file.originalname).toLowerCase();
-//   if (!allowedExtensions.includes(extension)) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Only PDF, DOCX, and TXT files are allowed",
-//     });
-//   }
-
-//   const context_id = GenerateUniqueId();
-//   const s3Folder = `context/${context_id}__${context_type}__${context_name}`;
-//   const s3Key = `${s3Folder}/${file.originalname.trim()}`;
-
-//   const uploadParams = {
-//     Bucket: process.env.BUCKET_NAME,
-//     Key: s3Key,
-//     Body: file.buffer,
-//     ContentType: file.mimetype,
-//   };
-
-//   // Step 1: Upload to S3
-//   await s3Client.send(new PutObjectCommand(uploadParams));
-
-//   // Step 2: Store metadata in DB
-//   await Context.create({
-//     context_id,
-//     context_name,
-//     context_type,
-//     s3_key: s3Key,
-//   });
-
-//   return res.status(201).json({
-//     success: true,
-//     message: "File uploaded to S3 and metadata saved in DB successfully",
-//     data: {
-//       context_id,
-//       context_name,
-//       context_type,
-//       s3_key: s3Key,
-//     },
-//   });
-// });
-
-// ✅ Upload Context Document
-// POST /api/v1/context
+// ✅ Upload Context Document to S3 and database
 export const uploadContextDocument = asyncHandler(async (req, res) => {
-  const { context_name, context_type } = req.body;
-  const file = req.file;
+  try {
+    const { context_name, context_type } = req.body;
+    const file = req.file;
 
-  // Validate inputs
-  if (!context_name || !context_type || !file) {
-    return res.status(400).json({
-      success: false,
-      message: "context_name, context_type, and context_file are required",
-    });
-  }
+    if (!context_name || !context_type || !file) {
+      return res.status(400).json({
+        success: false,
+        message: "context_name, context_type, and context_file are required",
+      });
+    }
 
-  // Validate extension
-  const allowedExtensions = [".pdf", ".docx", ".txt"];
-  const extension = path.extname(file.originalname).toLowerCase();
-  if (!allowedExtensions.includes(extension)) {
-    return res.status(400).json({
-      success: false,
-      message: "Only PDF, DOCX, and TXT files are allowed",
-    });
-  }
+    const allowedExtensions = [".pdf", ".docx", ".txt"];
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (!allowedExtensions.includes(extension)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only PDF, DOCX, and TXT files are allowed",
+      });
+    }
 
-  // Generate unique context ID
-  const context_id = GenerateUniqueId();
+    const context_id = GenerateUniqueId();
+    const s3Folder = `context/${context_id}__${context_type}__${context_name}`;
+    const s3Key = `${s3Folder}/${file.originalname.trim()}`;
 
-  // S3 key structure
-  const s3Folder = `context/${context_id}__${context_type}__${context_name}`;
-  const s3Key = `${s3Folder}/${file.originalname.trim()}`;
+    const uploadParams = {
+      Bucket: process.env.BUCKET_NAME,
+      Key: s3Key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    };
+    await s3Client.send(new PutObjectCommand(uploadParams));
 
-  // Step 1: Upload file to S3
-  const uploadParams = {
-    Bucket: process.env.BUCKET_NAME,
-    Key: s3Key,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-  };
-  await s3Client.send(new PutObjectCommand(uploadParams));
-
-  // Step 2: Store metadata in DB
-  await Context.create({
-    context_id,
-    context_name,
-    context_type,
-    s3_key: s3Key,
-  });
-
-  // Success response
-  return res.status(201).json({
-    success: true,
-    message: "File uploaded to S3 and metadata saved in DB successfully",
-    data: {
+    await Context.create({
       context_id,
       context_name,
       context_type,
       s3_key: s3Key,
-    },
-  });
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "File uploaded to S3 and metadata saved in DB successfully",
+      data: {
+        context_id,
+        context_name,
+        context_type,
+        s3_key: s3Key,
+      },
+    });
+  } catch (error) {
+    console.error("Error uploading context document:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload context document.",
+      error: error.message,
+    });
+  }
 });
 
-// ✅ Delete Context Document and Embeddings
-// DELETE /api/v1/context/:context_id
-// export const deleteContextDocument = asyncHandler(async (req, res) => {
-//   const { context_id } = req.query;
+// ✅ Get All Contexts
+export const getAllContexts = asyncHandler(async (req, res) => {
+  try {
+    const searchQuery = req.query.searchQuery || "";
+    const type = req.query.type;
 
-//   if (!context_id) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "context_id is required",
-//     });
-//   }
+    const whereClause = {
+      ...(searchQuery && {
+        [Op.or]: [
+          { context_name: { [Op.iLike]: `%${searchQuery}%` } },
+          { context_type: { [Op.iLike]: `%${searchQuery}%` } },
+        ],
+      }),
+      ...(type && { context_type: type }),
+    };
 
-//   // Step 1: Delete from S3
-//   const s3Prefix = `context/${context_id}`;
+    const totalItems = await Context.count({ where: whereClause });
 
-//   const listParams = {
-//     Bucket: process.env.BUCKET_NAME,
-//     Prefix: s3Prefix,
-//   };
+    let limit = parseInt(req.query.limit) || totalItems || 10;
+    let page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
 
-//   const listedObjects = await s3Client.send(
-//     new ListObjectsV2Command(listParams)
-//   );
+    const contexts = await Context.findAll({
+      where: whereClause,
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+    });
 
-//   if (listedObjects.Contents && listedObjects.Contents.length > 0) {
-//     const deleteParams = {
-//       Bucket: process.env.BUCKET_NAME,
-//       Delete: {
-//         Objects: listedObjects.Contents.map((obj) => ({ Key: obj.Key })),
-//         Quiet: true,
-//       },
-//     };
-//     await s3Client.send(new DeleteObjectsCommand(deleteParams));
-//   }
+    const totalPages = limit ? Math.ceil(totalItems / limit) : 1;
 
-//   // Step 2: Delete vectors from Weaviate using wildcard match
-//   const docIdPrefix = `${context_id}__`;
-
-//   await weaviateClient.batch
-//     .objectsBatchDeleter()
-//     .withClassName("DocumentChunk")
-//     .withWhere({
-//       path: ["doc_id"],
-//       operator: "Like",
-//       valueString: `${docIdPrefix}*`,
-//     })
-//     .do();
-
-//   // Step 3: Delete metadata from DB
-//   await Context.destroy({ where: { context_id } });
-
-//   return res.status(200).json({
-//     success: true,
-//     message: `Deleted context '${context_id}' from S3, Weaviate, and DB`,
-//   });
-// });
-
-// // DELETE ALL THE EMBEDDINGS
-// export const deleteAllContextEmbeddings = asyncHandler(async (req, res) => {
-//   try {
-//     const deleteResult = await weaviateClient.batch
-//       .objectsBatchDeleter()
-//       .withClassName("DocumentChunk")
-//       .withWhere({
-//         path: ["doc_id"],
-//         operator: "Like",
-//         valueString: "*",
-//       })
-//       .do();
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "All DocumentChunk embeddings deleted from Weaviate.",
-//       result: deleteResult,
-//     });
-//   } catch (error) {
-//     console.error("Error deleting all context embeddings:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to delete all DocumentChunk embeddings.",
-//       error: error.message,
-//     });
-//   }
-// });
+    return res.status(200).json({
+      success: true,
+      message: contexts.length
+        ? "Contexts fetched successfully"
+        : "No contexts found",
+      data: contexts,
+      pagination: {
+        current_page: page,
+        total_pages: totalPages,
+        page_size: limit,
+        total_items: totalItems,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching contexts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch contexts.",
+      error: error.message,
+    });
+  }
+});
 
 // ✅ Delete Context Document and Embeddings
 // DELETE /api/v1/context/:context_id
 export const deleteContextDocument = asyncHandler(async (req, res) => {
-  const { context_id } = req.query;
+  const { context_ids } = req.body;
 
-  if (!context_id) {
+  if (!Array.isArray(context_ids) || context_ids.length === 0) {
     return res.status(400).json({
       success: false,
-      message: "context_id is required",
+      message: "context_ids must be a non-empty array",
     });
   }
 
-  // Step 1: Delete all objects from S3 folder
-  const s3Prefix = `context/${context_id}`;
+  const results = [];
 
-  const listParams = {
-    Bucket: process.env.BUCKET_NAME,
-    Prefix: s3Prefix,
-  };
+  for (const context_id of context_ids) {
+    try {
+      const s3Prefix = `context/${context_id}`;
 
-  const listedObjects = await s3Client.send(
-    new ListObjectsV2Command(listParams)
-  );
+      // 1. Delete from S3
+      const listedObjects = await s3Client.send(
+        new ListObjectsV2Command({
+          Bucket: process.env.BUCKET_NAME,
+          Prefix: s3Prefix,
+        })
+      );
 
-  if (listedObjects.Contents && listedObjects.Contents.length > 0) {
-    const deleteParams = {
-      Bucket: process.env.BUCKET_NAME,
-      Delete: {
-        Objects: listedObjects.Contents.map((obj) => ({ Key: obj.Key })),
-        Quiet: true,
-      },
-    };
-    await s3Client.send(new DeleteObjectsCommand(deleteParams));
+      if (listedObjects.Contents?.length > 0) {
+        await s3Client.send(
+          new DeleteObjectsCommand({
+            Bucket: process.env.BUCKET_NAME,
+            Delete: {
+              Objects: listedObjects.Contents.map((obj) => ({ Key: obj.Key })),
+              Quiet: true,
+            },
+          })
+        );
+      }
+
+      // 2. Delete from Weaviate
+      await weaviateClient.batch
+        .objectsBatchDeleter()
+        .withClassName("DocumentChunk")
+        .withWhere({
+          path: ["context_id"],
+          operator: "Equal",
+          valueString: context_id,
+        })
+        .do();
+
+      // 3. Delete from DB
+      await Context.destroy({ where: { context_id } });
+
+      results.push({ context_id, status: "deleted" });
+    } catch (err) {
+      console.error(`Failed to delete ${context_id}:`, err.message);
+      results.push({ context_id, status: "error", error: err.message });
+    }
   }
-
-  // Step 2: Delete vectors from Weaviate by context_id
-  await weaviateClient.batch
-    .objectsBatchDeleter()
-    .withClassName("DocumentChunk")
-    .withWhere({
-      path: ["context_id"],
-      operator: "Equal",
-      valueString: context_id,
-    })
-    .do();
-
-  // Step 3: Delete metadata from DB
-  await Context.destroy({ where: { context_id } });
 
   return res.status(200).json({
     success: true,
-    message: `Deleted context '${context_id}' from S3, Weaviate, and DB.`,
+    message: "Bulk delete operation completed.",
+    results,
   });
 });
 
 // ✅ Delete ALL DocumentChunk Embeddings (using doc_id LIKE '*')
-// DELETE /api/v1/context/embeddings/all
 export const deleteAllContextEmbeddings = asyncHandler(async (req, res) => {
   try {
     const deleteResult = await weaviateClient.batch
       .objectsBatchDeleter()
       .withClassName("DocumentChunk")
       .withWhere({
-        path: ["doc_id"],
+        path: ["context_id"],
         operator: "Like",
-        valueString: "*", // matches all doc_id values
+        valueString: "*", // Match all context_id values
       })
       .do();
 

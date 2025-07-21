@@ -4,9 +4,11 @@
   "BACKEND_API_ENDPOINTS": {
     "CONTEXTS": {
       "CREATE": "/api/v1/context",
-      "READ": "/api/v1/contexts",
+      "READ": "/api/v1/context",
       "DELETE": "/api/v1/context/"
     },
-    "AGENT": {}
+    "AGENT": {
+      "ASK": "/api/v1/agent/ask"
+    }
   }
 }

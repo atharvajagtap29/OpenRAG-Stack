@@ -27,7 +27,12 @@ export const askAgent = async (req, res) => {
     const { embedding } = JSON.parse(Buffer.from(embedRes.body).toString());
 
     // Step 2: Vector Search in Weaviate
-    const contextChunks = await queryRelevantChunks(embedding, context_id, 5);
+    const contextChunks = await queryRelevantChunks(
+      embedding,
+      context_id,
+      parseInt(process.env.TOP_K),
+      parseFloat(process.env.VECTOR_CERTAINTY)
+    );
     if (!contextChunks.length) {
       return res.status(404).json({
         success: false,
@@ -47,8 +52,8 @@ export const askAgent = async (req, res) => {
       body: JSON.stringify({
         prompt: finalPrompt,
         // max_gen_len: 512,
-        temperature: 0.7,
-        top_p: 0.9,
+        temperature: parseFloat(process.env.LLM_TEMPERATURE),
+        top_p: parseFloat(process.env.LLM_TOP_P),
       }),
     });
 

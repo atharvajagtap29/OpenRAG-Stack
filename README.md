@@ -12,6 +12,7 @@ OpenRAG is a scalable, open-source Retrieval-Augmented Generation (RAG) backend 
 - [⚙️ Node.js Setup](#️-nodejs-setup)
 - [🗃️ SQL Setup (MySQL 8.x)](#️-sql-setup-mysql-8x)
 - [🧠 Weaviate Vector DB Setup](#-weaviate-vector-db-setup)
+  - [⚡ Auto-Start Weaviate on EC2 Boot](#-auto-start-weaviate-on-ec2-boot)
 - [🔐 Environment Variables](#-environment-variables)
 - [🧬 Core Models](#-core-models)
 - [📈 Document Ingestion Flow](#-document-ingestion-flow)
@@ -48,8 +49,6 @@ npm install
 ---
 
 ## 🗃️ SQL Setup (MySQL 8.x)
-
-Use Amazon RDS or local MySQL.
 
 ```bash
 # Create MySQL Database
@@ -125,8 +124,6 @@ mkdir -p ~/weaviate/weaviate_data && cd ~/weaviate
 nano docker-compose.yml
 ```
 
-Paste this:
-
 ```yaml
 version: "3.4"
 services:
@@ -147,6 +144,30 @@ services:
 Visit: `http://<your-ec2-ip>:8080`
 
 ---
+
+### ⚡ Auto-Start Weaviate on EC2 Boot
+
+To ensure Weaviate starts automatically after an EC2 reboot, paste the following config in `/etc/systemd/system/weaviate.service`:
+
+```bash
+# Step 5: Create a systemd service
+sudo nano /etc/systemd/system/weaviate.service
+
+[Unit]
+Description=Weaviate Docker Compose Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/root/weaviate
+ExecStart=/usr/bin/docker-compose up -d
+ExecStop=/usr/bin/docker-compose down
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ## 🔐 Environment Variables
 

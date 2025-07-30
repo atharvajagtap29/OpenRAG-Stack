@@ -1,6 +1,6 @@
-# 🧠 OpenRAG: Production-Ready RAG Backend with Amazon Bedrock, Weaviate & AWS
+# 🧠 ContextQ: Production-Ready RAG Backend with Amazon Bedrock, Weaviate & AWS
 
-OpenRAG is a scalable, open-source Retrieval-Augmented Generation (RAG) backend designed for production environments. Built with **Node.js**, **Express**, and **Sequelize**, it integrates **Amazon Bedrock**, **Weaviate**, and **AWS S3** to deliver fast vector search, modular ingestion, and powerful LLM-driven responses.
+ContextQ is a scalable, open-source Retrieval-Augmented Generation (RAG) backend designed for production environments. Built with **Node.js**, **Express**, and **Sequelize**, it integrates **Amazon Bedrock**, **Weaviate**, and **AWS S3** to deliver fast vector search, modular ingestion, and powerful LLM-driven responses.
 
 > 💡 API-first design. Plug into any frontend or orchestration layer.
 
@@ -250,7 +250,7 @@ D --> E[Store Vector in Weaviate with Metadata]
 
 ## ✅ Conclusion
 
-OpenRAG is built with extensibility and production-readiness in mind. It supports modular integrations with any LLM or vector database, and is easily deployable on any AWS stack.
+ContextQ is built with extensibility and production-readiness in mind. It supports modular integrations with any LLM or vector database, and is easily deployable on any AWS stack.
 
 > Want to contribute or extend? Fork it, plug in your models, and scale.
 

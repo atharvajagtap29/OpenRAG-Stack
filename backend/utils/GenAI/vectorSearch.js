@@ -1,9 +1,5 @@
 import { weaviateClient } from "./weaviateClient.js";
 
-// Load env values from .env file
-const DEFAULT_TOP_K = parseInt(process.env.TOP_K);
-const VECTOR_CERTAINTY = parseFloat(process.env.VECTOR_CERTAINTY);
-
 export async function queryRelevantChunks(
   vector,
   context_id,
